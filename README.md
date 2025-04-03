@@ -40,15 +40,20 @@ Adicionalmente, o usuário pode aplicar **suavização por kernel gaussiano** (p
 ## 4. Estrutura de Pastas
 
 ```plaintext
-├── AP1
+├── AP1/
 │   ├── app.py
-│   └── images
+│   ├── resumo_slides/
+│   │   ├── 1.md
+│   │   ├── 2.md
+│   │   ├── 3.md
+│   │   └── 4.md
+│   └── images/
 │       ├── AP1VisãoComputacional_TércioTeixeira.jpg
 │       ├── AP1VisãoComputacional1_TércioTeixeira.jpg
 │       └── AP1VisãoComputacional2_TércioTeixeira.jpg
-├── ImageProcessing
+├── ImageProcessing/
 │   └── app.py
-├── SkinDetection
+├── SkinDetection/
 │   └── app.py
 ├── README.md
 └── requirements.txt
