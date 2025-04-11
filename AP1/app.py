@@ -175,39 +175,39 @@ def main():
     # Opção para escolher imagens pré-definidas ou upload
     option = st.sidebar.selectbox(
         "Escolha uma imagem de entrada",
-        ("Imagem Padrão 1", "Imagem Padrão 2", "Imagem Padrão 3", 
-         "Imagem Padrão 4", "Imagem Padrão 5", "Imagem Padrão 6", 
-         "Imagem Padrão 7", "Imagem Padrão 8", "Imagem Padrão 9", "Fazer upload...")
+        ("Mortal no Lago", "Caveirão", "Senegal", 
+         "Guarda-Chuva", "Crianças na Agua", "Bicicleta", 
+         "Banho de Mangueira", "Altinha", "Parede do Chaves","Salto de Fé","Fazer upload...")
     )
 
-    if option == "Imagem Padrão 1":
+    if option == "Mortal no Lago":
         img_path = "images/AP1VisãoComputacional_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 2":
+    elif option == "Caveirão":
         img_path = "images/AP1VisãoComputacional1_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 3":
+    elif option == "Senegal":
         img_path = "images/AP1VisãoComputacional2_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 4":
+    elif option == "Guarda-Chuva":
         img_path = "images/AP1VisãoComputacional3_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 5":
+    elif option == "Crianças na Agua":
         img_path = "images/AP1VisãoComputacional4_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 6":
+    elif option == "Bicicleta":
         img_path = "images/AP1VisãoComputacional5_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 7":
+    elif option == "Banho de Mangueira":
         img_path = "images/AP1VisãoComputacional6_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 8":
+    elif option == "Altinha":
         img_path = "images/AP1VisãoComputacional7_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 9":
+    elif option == "Parede do Chaves":
         img_path = "images/AP1VisãoComputacional8_TércioTeixeira.jpg"
         image = Image.open(img_path)
-    elif option == "Imagem Padrão 10":
+    elif option == "Salto de Fé":
         img_path = "images/AP1VisãoComputacional9_TércioTeixeira.jpg"
         image = Image.open(img_path)
     else:
