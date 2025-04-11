@@ -272,7 +272,7 @@ def main():
     st.subheader("Aplicar Kernel Gaussiano")
 
     kernel_size = st.slider("Tamanho do Kernel", min_value=3, max_value=15, step=2, value=5)
-    sigma_value = st.slider("Sigma", min_value=1, max_value=10, value=1)
+    sigma_value = st.slider("Desvio Padrão", min_value=1, max_value=10, value=1)
     
     # Aplica Gaussian
     gaussed_img = gaussian_blur(opencv_image, kernel_size, sigma_value)
