@@ -126,7 +126,7 @@ def main():
         ("Mortal no Lago", "Caveirão", "Senegal", 
          "Guarda-Chuva", "Crianças na Agua", "Bicicleta", 
          "Banho de Mangueira", "Altinha", "Parede do Chaves", 
-         "Salto de Fé","Mickey 8-bit","Jogo Baixa Qualidade", "Jogo Alta Qualidade", "Fazer upload...")
+         "Salto de Fé","Mickey 8-bit","Jogo Baixa Qualidade", "Jogo Alta Qualidade", 'Carro', "Fazer upload...")
     )
 
     uploaded_file = None
@@ -202,9 +202,12 @@ def main():
         image = Image.open(img_path) 
     elif option == "Jogo Baixa Qualidade":
         img_path = "images/celeste2.jpeg"
-        image = Image.open(img_path)      
+        image = Image.open(img_path)
     elif option == "Jogo Alta Qualidade":
         img_path = "images/celeste3.jpg"
+        image = Image.open(img_path)   
+    elif option == "Carro":
+        img_path = "images/carro.jpg"
         image = Image.open(img_path)         
     else:
         if uploaded_file is not None:
