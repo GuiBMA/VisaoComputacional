@@ -1,11 +1,11 @@
 # Visão Computacional
 
 **Autores:**
-- *Guilherme Barros de Melo Almeida*
-- *Ivo lavaseck*
-- *Pedro Lustroza*
-- *Gustavo*
-- *André*
+- *Guilherme Barros*
+- *Ivo Lavacek*
+- *Pedro Lustosaa*
+- *Gustavo Raia*
+- *André Silveira*
 
 ## 1. Introdução
 
