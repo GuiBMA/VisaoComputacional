@@ -4,159 +4,105 @@ import numpy as np
 from PIL import Image
 import os
 
+# =========================
+# Funções de detecção de bordas
+# =========================
 
-def prewitt_edge_detection(image):
-    """
-    Detecção de bordas utilizando operadores Prewitt (primeira derivada).
-    É necessário criar os kernels manualmente, pois o OpenCV não tem Prewitt nativo.
-    """
-    # Converte para escala de cinza caso não esteja
+
+def prewitt_edge_detection(image, kernel_size):
+    """Detecção de bordas usando Prewitt (com kernel personalizado)."""
+    # Converte para escala de cinza
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Kernels Prewitt
-    kernelx = np.array([[-1,  0,  1],
-                        [-1,  0,  1],
-                        [-1,  0,  1]], dtype=np.float32)
-    kernely = np.array([[ 1,  1,  1],
-                        [ 0,  0,  0],
+
+    # Kernels clássicos do Prewitt
+    kernelx = np.array([[-1, 0, 1],
+                        [-1, 0, 1],
+                        [-1, 0, 1]], dtype=np.float32)
+
+    kernely = np.array([[1, 1, 1],
+                        [0, 0, 0],
                         [-1, -1, -1]], dtype=np.float32)
-    
-    # Convolução (a saída geralmente vem em uint8 se a imagem de entrada for uint8)
+
+    # Aplica os filtros
     img_prewittx = cv2.filter2D(gray, cv2.CV_32F, kernelx)
     img_prewitty = cv2.filter2D(gray, cv2.CV_32F, kernely)
-    
-    # Agora temos duas imagens em float32. Podemos calcular a magnitude:
-    # Opção 1 (usando as funções do OpenCV):
-    prewitt = cv2.sqrt(cv2.addWeighted(cv2.pow(img_prewittx, 2.0), 1.0,
-                                       cv2.pow(img_prewitty, 2.0), 1.0, 0.0))
 
-    # Opção 2 (usando Numpy):
-    # prewitt = np.sqrt(img_prewittx**2 + img_prewitty**2)
+    # Calcula a magnitude do gradiente
+    prewitt = cv2.magnitude(img_prewittx, img_prewitty)
 
-    # Retorna a matriz resultante em float32
-    # Se precisar exibir como imagem, normalizar e converter para uint8:
-    # prewitt_disp = cv2.normalize(prewitt, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    
     return prewitt
 
+
 def prewitt_compass_edge_detection(image):
-    """
-    Detecção de bordas utilizando o operador Prewitt Compass.
-    Nesse método, usamos várias máscaras (orientações) e pegamos o máximo.
-    """
+    """Prewitt Compass (direções fixas)."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = np.float32(gray)
     
-    # Máscaras (kernels) nas 8 direções
-    kernels = []
-    kernels.append(np.array([[ -1,  0,  1],
-                             [ -1,  0,  1],
-                             [ -1,  0,  1]], dtype=np.float32)) # 0° / 180°
-    kernels.append(np.array([[  0,  1,  1],
-                             [ -1,  0,  1],
-                             [ -1, -1,  0]], dtype=np.float32)) # 45°
-    kernels.append(np.array([[  1,  1,  1],
-                             [  0,  0,  0],
-                             [ -1, -1, -1]], dtype=np.float32)) # 90°
-    kernels.append(np.array([[  1,  1,  0],
-                             [  1,  0, -1],
-                             [  0, -1, -1]], dtype=np.float32)) # 135°
-    kernels.append(np.array([[  1,  0, -1],
-                             [  1,  0, -1],
-                             [  1,  0, -1]], dtype=np.float32)) # 180°
-    kernels.append(np.array([[  0, -1, -1],
-                             [  1,  0, -1],
-                             [  1,  1,  0]], dtype=np.float32)) # 225°
-    kernels.append(np.array([[ -1, -1, -1],
-                             [  0,  0,  0],
-                             [  1,  1,  1]], dtype=np.float32)) # 270°
-    kernels.append(np.array([[ -1, -1,  0],
-                             [ -1,  0,  1],
-                             [  0,  1,  1]], dtype=np.float32)) # 315°
+    kernels = [
+        np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], dtype=np.float32),
+        np.array([[0, 1, 1], [-1, 0, 1], [-1, -1, 0]], dtype=np.float32),
+        np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]], dtype=np.float32),
+        np.array([[1, 1, 0], [1, 0, -1], [0, -1, -1]], dtype=np.float32),
+        np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]], dtype=np.float32),
+        np.array([[0, -1, -1], [1, 0, -1], [1, 1, 0]], dtype=np.float32),
+        np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]], dtype=np.float32),
+        np.array([[-1, -1, 0], [-1, 0, 1], [0, 1, 1]], dtype=np.float32)
+    ]
 
-    # Aplica cada kernel e pega o valor máximo
-    compass_images = [cv2.filter2D(gray, -1, k) for k in kernels]
-    # Tira o valor absoluto para realçar as bordas (ou pode pegar o valor bruto se preferir)
-    compass_images_abs = [np.abs(ci) for ci in compass_images]
-    
-    # Faz um stack e pega o máximo por pixel
-    stacked = np.stack(compass_images_abs, axis=-1)
-    compass_result = np.max(stacked, axis=-1)
-    
-    return compass_result
+    compass_images = [np.abs(cv2.filter2D(gray, -1, k)) for k in kernels]
+    stacked = np.stack(compass_images, axis=-1)
+    return np.max(stacked, axis=-1)
 
 
-def sobel_edge_detection(image):
-    """
-    Detecção de bordas utilizando operador Sobel (primeira derivada).
-    """
+def sobel_edge_detection(image, kernel_size):
+    """Detecção de bordas usando Sobel."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Sobel nas direções x e y
-    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-    sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-    # Magnitude
-    sobel_mag = cv2.magnitude(sobelx, sobely)
-    
-    return sobel_mag
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=kernel_size)
+    sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=kernel_size)
+    return cv2.magnitude(sobelx, sobely)
 
 
-def sobel_compass_edge_detection(image):
-    """
-    Implementa lógica semelhante ao compass, mas usando Sobel em múltiplas orientações (H/V é o mais comum).
-    Aqui, mostraremos apenas H/V (pois Sobel normalmente é 2 direções), mas para 'compass'
-    poderíamos combinar mais ângulos. Ilustramos com horizontal e vertical.
-    """
+def sobel_compass_edge_detection(image, kernel_size):
+    """Sobel Compass usando máximo entre horizontal e vertical."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Sobel horizontal (y=0, x=1)
-    sobel_h = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-    # Sobel vertical (y=1, x=0)
-    sobel_v = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-    
-    # Podemos combinar tirando o máximo
-    sobel_h_abs = np.abs(sobel_h)
-    sobel_v_abs = np.abs(sobel_v)
-    
-    combined = np.maximum(sobel_h_abs, sobel_v_abs)
-    return combined
+    sobel_h = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=kernel_size)
+    sobel_v = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=kernel_size)
+    return np.maximum(np.abs(sobel_h), np.abs(sobel_v))
+
+
+def laplacian_edge_detection(image, kernel_size):
+    """Detecção de bordas usando Laplaciano."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    laplacian = cv2.Laplacian(gray, cv2.CV_64F, ksize=kernel_size)
+    return np.abs(laplacian)
+
+
+def roberts_edge_detection(image):
+    """Detecção de bordas usando Roberts Cross (kernel fixo 2x2)."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    kernelx = np.array([[1, 0], [0, -1]], dtype=np.float32)
+    kernely = np.array([[0, 1], [-1, 0]], dtype=np.float32)
+    img_robertsx = cv2.filter2D(gray, -1, kernelx)
+    img_robertsy = cv2.filter2D(gray, -1, kernely)
+    return cv2.magnitude(img_robertsx.astype(float), img_robertsy.astype(float))
 
 
 def successive_gaussians_edge_detection(image):
-    """
-    Exemplo simples de 'Successive Gaussians' ou Diferença de Gaussiana (DoG).
-    Aplica duas Gaussianas com sigmas diferentes e subtrai uma da outra.
-    """
+    """DoG (Diferença de Gaussianas). Não depende do slider."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Gaussian blur com duas sigmas diferentes
-    blur1 = cv2.GaussianBlur(gray, (5,5), 1)
-    blur2 = cv2.GaussianBlur(gray, (5,5), 2)
-    
-    dog = blur1 - blur2
-    # Convertendo para valor absoluto para realçar bordas
-    dog_abs = np.abs(dog)
-    
-    return dog_abs
+    blur1 = cv2.GaussianBlur(gray, (5, 5), 1)
+    blur2 = cv2.GaussianBlur(gray, (5, 5), 2)
+    return np.abs(blur1 - blur2)
 
 
 def canny_edge_detection(image, low_threshold=100, high_threshold=200):
-    """
-    Detecção de bordas utilizando Canny, que faz:
-    1) Suavização por Gaussiana
-    2) Gradiente (1ª derivada)
-    3) Non-maximum suppression
-    4) Histerese
-    """
+    """Detecção de bordas usando Canny."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, low_threshold, high_threshold)
-    return edges
+    return cv2.Canny(gray, low_threshold, high_threshold)
 
 
-def gaussian_blur(image, kernel_size=5, sigma=1):
-    """
-    Aplica um Kernel Gaussiano básico para suavização.
-    """
+def gaussian_blur(image, kernel_size, sigma):
+    """Aplica Gaussian Blur."""
     return cv2.GaussianBlur(image, (kernel_size, kernel_size), sigma)
 
 
@@ -169,17 +115,33 @@ def main():
 
     st.write("""
     Este aplicativo compara diferentes métodos de detecção de bordas em imagens, 
-    incluindo Prewitt, Sobel, Canny e variações com filtros gaussianos.
+    incluindo Prewitt, Sobel, Canny, Roberts, Laplaciano e variações com filtros gaussianos.
     """)
 
-    # Opção para escolher imagens pré-definidas ou upload
+    # ==== Menu lateral completo ====
+    st.sidebar.header("Configurações")
+
     option = st.sidebar.selectbox(
         "Escolha uma imagem de entrada",
         ("Mortal no Lago", "Caveirão", "Senegal", 
          "Guarda-Chuva", "Crianças na Agua", "Bicicleta", 
-         "Banho de Mangueira", "Altinha", "Parede do Chaves","Salto de Fé","Fazer upload...")
+         "Banho de Mangueira", "Altinha", "Parede do Chaves", "Salto de Fé", "Fazer upload...")
     )
 
+    uploaded_file = None
+    if option == "Fazer upload...":
+        uploaded_file = st.sidebar.file_uploader("Faça upload da imagem", type=["jpg", "jpeg", "png"])
+
+    # Slider global para kernel dos detectores
+    kernel_global = st.sidebar.slider("Tamanho do Kernel Global (detectores)", min_value=3, max_value=101, step=2, value=3)
+
+    # Sliders para Gaussian Blur separado
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Gaussian Blur Separado")
+    kernel_size = st.sidebar.slider("Tamanho do Kernel Gaussiano", min_value=3, max_value=101, step=2, value=5)
+    sigma_value = st.sidebar.slider("Desvio Padrão (Sigma)", min_value=1, max_value=100, value=1)
+
+    # ==== Carregamento da imagem mantendo if / elif / else ====
     if option == "Mortal no Lago":
         img_path = "images/AP1VisãoComputacional_TércioTeixeira.jpg"
         image = Image.open(img_path)
@@ -211,7 +173,6 @@ def main():
         img_path = "images/AP1VisãoComputacional9_TércioTeixeira.jpg"
         image = Image.open(img_path)
     else:
-        uploaded_file = st.sidebar.file_uploader("Faça upload da imagem", type=["jpg", "jpeg", "png"])
         if uploaded_file is not None:
             image = Image.open(uploaded_file)
         else:
@@ -228,61 +189,60 @@ def main():
     st.markdown("---")
     st.subheader("Comparação dos Detectores de Borda")
 
-    # Aplica cada método
-    prewitt = prewitt_edge_detection(opencv_image)
+    # Aplica cada método passando kernel_global onde necessário
+    prewitt = prewitt_edge_detection(opencv_image, kernel_global)
     prewitt_compass = prewitt_compass_edge_detection(opencv_image)
-    sobel = sobel_edge_detection(opencv_image)
-    sobel_compass = sobel_compass_edge_detection(opencv_image)
+    sobel = sobel_edge_detection(opencv_image, kernel_global)
+    sobel_compass = sobel_compass_edge_detection(opencv_image, kernel_global)
     canny = canny_edge_detection(opencv_image)
     dog = successive_gaussians_edge_detection(opencv_image)
-    
-    # Para exibir, podemos normalizar as imagens (para Prewitt, Sobel, etc.)
-    # ou converter para uint8 caso sejam floats.
-    prewitt_disp = cv2.normalize(prewitt, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    prewitt_compass_disp = cv2.normalize(prewitt_compass, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    sobel_disp = cv2.normalize(sobel, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    sobel_compass_disp = cv2.normalize(sobel_compass, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    dog_disp = cv2.normalize(dog, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    # Canny já está em formato uint8
+    roberts = roberts_edge_detection(opencv_image)
+    laplaciano = laplacian_edge_detection(opencv_image, kernel_global)
 
-    # Exibição lado a lado (cada detecção ao lado da imagem suavizada)
-    col1, col2, col3 = st.columns(3)
+    # Normaliza para exibição
+    def normalize_display(img):
+        return cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8) if img.dtype != np.uint8 else img
+
+    prewitt_disp = normalize_display(prewitt)
+    prewitt_compass_disp = normalize_display(prewitt_compass)
+    sobel_disp = normalize_display(sobel)
+    sobel_compass_disp = normalize_display(sobel_compass)
+    dog_disp = normalize_display(dog)
+    roberts_disp = normalize_display(roberts)
+    laplaciano_disp = normalize_display(laplaciano)
+
+    # Exibição lado a lado (2 colunas maiores)
+    col1, col2 = st.columns(2)
     with col1:
-        st.write("**Prewitt (Primeira Derivada)**")
+        st.write("**Prewitt (Kernel Global)**")
         st.image(prewitt_disp, use_container_width=True)
-        
-        st.write("**Sobel (Primeira Derivada)**")
+        st.write("**Sobel (Kernel Global)**")
         st.image(sobel_disp, use_container_width=True)
+        st.write("**Roberts (Kernel Fixo)**")
+        st.image(roberts_disp, use_container_width=True)
+        st.write("**Canny**")
+        st.image(canny, use_container_width=True)
 
     with col2:
         st.write("**Prewitt Compass**")
         st.image(prewitt_compass_disp, use_container_width=True)
-        
-        st.write("**Sobel Compass (H/V)**")
+        st.write("**Sobel Compass (Kernel Global)**")
         st.image(sobel_compass_disp, use_container_width=True)
-
-    with col3:
-        st.write("**Canny**")
-        st.image(canny, use_container_width=True)
-        
-        st.write("**Diferença de Gaussiana**")
+        st.write("**Laplaciano (Kernel Global)**")
+        st.image(laplaciano_disp, use_container_width=True)
+        st.write("**Diferença de Gaussiana (DoG)**")
         st.image(dog_disp, use_container_width=True)
 
     st.markdown("---")
-    st.subheader("Aplicar Kernel Gaussiano")
+    st.subheader("Aplicar Gaussian Blur Separadamente")
 
-    kernel_size = st.slider("Tamanho do Kernel", min_value=3, max_value=101, step=2, value=5)
-    sigma_value = st.slider("Desvio Padrão", min_value=1, max_value=100, value=1)
-    
-    # Aplica Gaussian
     gaussed_img = gaussian_blur(opencv_image, kernel_size, sigma_value)
-    
-    # Cria duas colunas para mostrar as imagens lado a lado
+
     col1, col2 = st.columns(2)
     with col1:
         st.image(cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB), caption="Imagem Original", use_container_width=True)
     with col2:
-        st.image(cv2.cvtColor(gaussed_img, cv2.COLOR_BGR2RGB), caption="Imagem suavizada com Kernel Gaussiano", use_container_width=True)
+        st.image(cv2.cvtColor(gaussed_img, cv2.COLOR_BGR2RGB), caption="Gaussian Blur", use_container_width=True)
 
 
 if __name__ == "__main__":
