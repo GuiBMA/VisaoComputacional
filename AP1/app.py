@@ -9,7 +9,7 @@ import os
 # =========================
 
 
-def prewitt_edge_detection(image, kernel_size):
+def prewitt_edge_detection(image):
     """Detecção de bordas usando Prewitt (com kernel personalizado)."""
     # Converte para escala de cinza
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -134,13 +134,37 @@ def main():
         uploaded_file = st.sidebar.file_uploader("Faça upload da imagem", type=["jpg", "jpeg", "png"])
 
     # Slider global para kernel dos detectores
-    kernel_global = st.sidebar.slider("Tamanho do Kernel Global (detectores)", min_value=3, max_value=101, step=2, value=3)
+    kernel_global = st.sidebar.slider("Tamanho do Kernel Global (detectores)", min_value=3, max_value=31, step=2, value=3)
 
-    # Sliders para Gaussian Blur separado
     st.sidebar.markdown("---")
-    st.sidebar.subheader("Gaussian Blur Separado")
-    kernel_size = st.sidebar.slider("Tamanho do Kernel Gaussiano", min_value=3, max_value=101, step=2, value=5)
-    sigma_value = st.sidebar.slider("Desvio Padrão (Sigma)", min_value=1, max_value=100, value=1)
+    st.sidebar.subheader("Configuração Gaussian Blur (Suavização)")
+    kernel_size = st.sidebar.slider("Tamanho do Kernel Gaussiano", min_value=3, max_value=31, step=2, value=5)
+    sigma_value = st.sidebar.slider("Desvio Padrão (Sigma)", min_value=1, max_value=10, value=1)
+    
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Comparação Interativa")
+    
+    detector_names = [
+        "Prewitt (3×3 fixo)",
+        "Prewitt Compass (direções)",
+        "Sobel (kernel variável)",
+        "Sobel Compass (H/V)",
+        "Laplaciano (kernel variável)",
+        "Roberts (2×2 fixo)",
+        "Canny (avançado)",
+        "Diferença de Gaussianas (DoG)"
+    ]
+
+    selected_sem = st.sidebar.selectbox(
+        "Escolha um detector SEM suavização",
+        detector_names
+    )
+
+    selected_com = st.sidebar.selectbox(
+        "Escolha um detector COM suavização",
+        detector_names
+    )
+
 
     # ==== Carregamento da imagem mantendo if / elif / else ====
     if option == "Mortal no Lago":
@@ -174,10 +198,10 @@ def main():
         img_path = "images/AP1VisãoComputacional9_TércioTeixeira.jpg"
         image = Image.open(img_path)
     elif option == "Mickey 8-bit":
-        img_path = "images/mickey2.jpg"
+        img_path = "images/mickey2.png"
         image = Image.open(img_path) 
     elif option == "Jogo Baixa Qualidade":
-        img_path = "images/celeste2.jpg"
+        img_path = "images/celeste2.jpeg"
         image = Image.open(img_path)      
     elif option == "Jogo Alta Qualidade":
         img_path = "images/celeste3.jpg"
@@ -189,70 +213,86 @@ def main():
             st.warning("Por favor, faça upload de uma imagem ou selecione uma opção padrão.")
             return
 
-    # Converte para OpenCV (numpy array)
+    # Converte para OpenCV
     opencv_image = np.array(image.convert("RGB"))
     opencv_image = cv2.cvtColor(opencv_image, cv2.COLOR_RGB2BGR)
 
-    st.subheader("Imagem Original")
-    st.image(image, use_container_width=True)
+    # Aplica Gaussian Blur (para a comparação com suavização)
+    gaussed_image = gaussian_blur(opencv_image, kernel_size, sigma_value)
 
-    st.markdown("---")
-    st.subheader("Comparação dos Detectores de Borda")
-
-    # Aplica cada método passando kernel_global onde necessário
-    prewitt = prewitt_edge_detection(opencv_image, kernel_global)
-    prewitt_compass = prewitt_compass_edge_detection(opencv_image)
-    sobel = sobel_edge_detection(opencv_image, kernel_global)
-    sobel_compass = sobel_compass_edge_detection(opencv_image, kernel_global)
-    canny = canny_edge_detection(opencv_image)
-    dog = successive_gaussians_edge_detection(opencv_image)
-    roberts = roberts_edge_detection(opencv_image)
-    laplaciano = laplacian_edge_detection(opencv_image, kernel_global)
-
-    # Normaliza para exibição
+    # Função utilitária para normalizar imagens para exibição
     def normalize_display(img):
         return cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8) if img.dtype != np.uint8 else img
 
-    prewitt_disp = normalize_display(prewitt)
-    prewitt_compass_disp = normalize_display(prewitt_compass)
-    sobel_disp = normalize_display(sobel)
-    sobel_compass_disp = normalize_display(sobel_compass)
-    dog_disp = normalize_display(dog)
-    roberts_disp = normalize_display(roberts)
-    laplaciano_disp = normalize_display(laplaciano)
-
-    # Exibição lado a lado (2 colunas maiores)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("**Prewitt (Kernel Global)**")
-        st.image(prewitt_disp, use_container_width=True)
-        st.write("**Sobel (Kernel Global)**")
-        st.image(sobel_disp, use_container_width=True)
-        st.write("**Roberts (Kernel Fixo)**")
-        st.image(roberts_disp, use_container_width=True)
-        st.write("**Canny**")
-        st.image(canny, use_container_width=True)
-
-    with col2:
-        st.write("**Prewitt Compass**")
-        st.image(prewitt_compass_disp, use_container_width=True)
-        st.write("**Sobel Compass (Kernel Global)**")
-        st.image(sobel_compass_disp, use_container_width=True)
-        st.write("**Laplaciano (Kernel Global)**")
-        st.image(laplaciano_disp, use_container_width=True)
-        st.write("**Diferença de Gaussiana (DoG)**")
-        st.image(dog_disp, use_container_width=True)
-
+    # ==== Detectores (Sem suavização) ====
     st.markdown("---")
-    st.subheader("Aplicar Gaussian Blur Separadamente")
+    st.subheader("Detectores de Borda **SEM** Suavização")
 
-    gaussed_img = gaussian_blur(opencv_image, kernel_size, sigma_value)
+    # Aplica cada método na imagem original
+    detectors_original = {
+        "Prewitt (3×3 fixo)": prewitt_edge_detection(opencv_image),
+        "Prewitt Compass (direções)": prewitt_compass_edge_detection(opencv_image),
+        "Sobel (kernel variável)": sobel_edge_detection(opencv_image, kernel_global),
+        "Sobel Compass (H/V)": sobel_compass_edge_detection(opencv_image, kernel_global),
+        "Laplaciano (kernel variável)": laplacian_edge_detection(opencv_image, kernel_global),
+        "Roberts (2×2 fixo)": roberts_edge_detection(opencv_image),
+        "Canny (avançado)": canny_edge_detection(opencv_image),
+        "Diferença de Gaussianas (DoG)": successive_gaussians_edge_detection(opencv_image),
+    }
+
+    col1, col2 = st.columns(2)
+    for idx, (name, result) in enumerate(detectors_original.items()):
+        with (col1 if idx % 2 == 0 else col2):
+            st.write(f"**{name}**")
+            st.image(normalize_display(result), use_container_width=True)
+
+    # ==== Detectores (Com suavização) ====
+    st.markdown("---")
+    st.subheader("Detectores de Borda **COM** Suavização (Gaussian Blur)")
+
+    # Aplica cada método na imagem suavizada
+    detectors_smooth = {
+        "Prewitt (3×3 fixo)": prewitt_edge_detection(gaussed_image),
+        "Prewitt Compass (direções)": prewitt_compass_edge_detection(gaussed_image),
+        "Sobel (kernel variável)": sobel_edge_detection(gaussed_image, kernel_global),
+        "Sobel Compass (H/V)": sobel_compass_edge_detection(gaussed_image, kernel_global),
+        "Laplaciano (kernel variável)": laplacian_edge_detection(gaussed_image, kernel_global),
+        "Roberts (2×2 fixo)": roberts_edge_detection(gaussed_image),
+        "Canny (avançado)": canny_edge_detection(gaussed_image),
+        "Diferença de Gaussianas (DoG)": successive_gaussians_edge_detection(gaussed_image),
+    }
+
+    col1, col2 = st.columns(2)
+    for idx, (name, result) in enumerate(detectors_smooth.items()):
+        with (col1 if idx % 2 == 0 else col2):
+            st.write(f"**{name}**")
+            st.image(normalize_display(result), use_container_width=True)
+
+    # ==== Exibe imagem original e suavizada separadamente ====
+    st.markdown("---")
+    st.subheader("Visualização da Suavização Aplicada")
 
     col1, col2 = st.columns(2)
     with col1:
         st.image(cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB), caption="Imagem Original", use_container_width=True)
     with col2:
-        st.image(cv2.cvtColor(gaussed_img, cv2.COLOR_BGR2RGB), caption="Gaussian Blur", use_container_width=True)
+        st.image(cv2.cvtColor(gaussed_image, cv2.COLOR_BGR2RGB), caption="Imagem com Gaussian Blur", use_container_width=True)
+        
+        st.markdown("---")
+    st.subheader("Comparação Interativa entre Detectores")
+
+    # Pega as imagens correspondentes aos detectores selecionados
+    image_sem_suavizacao = normalize_display(detectors_original[selected_sem])
+    image_com_suavizacao = normalize_display(detectors_smooth[selected_com])
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"**{selected_sem} - SEM Suavização**")
+        st.image(image_sem_suavizacao, use_container_width=True)
+
+    with col2:
+        st.write(f"**{selected_com} - COM Suavização**")
+        st.image(image_com_suavizacao, use_container_width=True)
 
 
 if __name__ == "__main__":
