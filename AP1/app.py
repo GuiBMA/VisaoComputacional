@@ -37,20 +37,45 @@ def prewitt_compass_edge_detection(image):
     """Prewitt Compass (direções fixas)."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = np.float32(gray)
-    
+
+    # 8 direções diferentes de Prewitt
     kernels = [
-        np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], dtype=np.float32),
-        np.array([[0, 1, 1], [-1, 0, 1], [-1, -1, 0]], dtype=np.float32),
-        np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]], dtype=np.float32),
-        np.array([[1, 1, 0], [1, 0, -1], [0, -1, -1]], dtype=np.float32),
-        np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]], dtype=np.float32),
-        np.array([[0, -1, -1], [1, 0, -1], [1, 1, 0]], dtype=np.float32),
-        np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]], dtype=np.float32),
-        np.array([[-1, -1, 0], [-1, 0, 1], [0, 1, 1]], dtype=np.float32)
+        np.array([[-1, 0, 1],
+                  [-1, 0, 1],
+                  [-1, 0, 1]], dtype=np.float32),  # 0°
+
+        np.array([[0, 1, 1],
+                  [-1, 0, 1],
+                  [-1, -1, 0]], dtype=np.float32),  # 45°
+
+        np.array([[1, 1, 1],
+                  [0, 0, 0],
+                  [-1, -1, -1]], dtype=np.float32),  # 90°
+
+        np.array([[1, 1, 0],
+                  [1, 0, -1],
+                  [0, -1, -1]], dtype=np.float32),  # 135°
+
+        np.array([[1, 0, -1],
+                  [1, 0, -1],
+                  [1, 0, -1]], dtype=np.float32),  # 180°
+
+        np.array([[0, -1, -1],
+                  [1, 0, -1],
+                  [1, 1, 0]], dtype=np.float32),  # 225°
+
+        np.array([[-1, -1, -1],
+                  [0, 0, 0],
+                  [1, 1, 1]], dtype=np.float32),  # 270°
+
+        np.array([[-1, -1, 0],
+                  [-1, 0, 1],
+                  [0, 1, 1]], dtype=np.float32)   # 315°
     ]
 
     compass_images = [np.abs(cv2.filter2D(gray, -1, k)) for k in kernels]
     stacked = np.stack(compass_images, axis=-1)
+
     return np.max(stacked, axis=-1)
 
 
