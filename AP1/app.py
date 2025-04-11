@@ -37,45 +37,20 @@ def prewitt_compass_edge_detection(image):
     """Prewitt Compass (direções fixas)."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = np.float32(gray)
-
-    # 8 direções diferentes de Prewitt
+    
     kernels = [
-        np.array([[-1, 0, 1],
-                  [-1, 0, 1],
-                  [-1, 0, 1]], dtype=np.float32),  # 0°
-
-        np.array([[0, 1, 1],
-                  [-1, 0, 1],
-                  [-1, -1, 0]], dtype=np.float32),  # 45°
-
-        np.array([[1, 1, 1],
-                  [0, 0, 0],
-                  [-1, -1, -1]], dtype=np.float32),  # 90°
-
-        np.array([[1, 1, 0],
-                  [1, 0, -1],
-                  [0, -1, -1]], dtype=np.float32),  # 135°
-
-        np.array([[1, 0, -1],
-                  [1, 0, -1],
-                  [1, 0, -1]], dtype=np.float32),  # 180°
-
-        np.array([[0, -1, -1],
-                  [1, 0, -1],
-                  [1, 1, 0]], dtype=np.float32),  # 225°
-
-        np.array([[-1, -1, -1],
-                  [0, 0, 0],
-                  [1, 1, 1]], dtype=np.float32),  # 270°
-
-        np.array([[-1, -1, 0],
-                  [-1, 0, 1],
-                  [0, 1, 1]], dtype=np.float32)   # 315°
+        np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], dtype=np.float32),
+        np.array([[0, 1, 1], [-1, 0, 1], [-1, -1, 0]], dtype=np.float32),
+        np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]], dtype=np.float32),
+        np.array([[1, 1, 0], [1, 0, -1], [0, -1, -1]], dtype=np.float32),
+        np.array([[1, 0, -1], [1, 0, -1], [1, 0, -1]], dtype=np.float32),
+        np.array([[0, -1, -1], [1, 0, -1], [1, 1, 0]], dtype=np.float32),
+        np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]], dtype=np.float32),
+        np.array([[-1, -1, 0], [-1, 0, 1], [0, 1, 1]], dtype=np.float32)
     ]
 
     compass_images = [np.abs(cv2.filter2D(gray, -1, k)) for k in kernels]
     stacked = np.stack(compass_images, axis=-1)
-
     return np.max(stacked, axis=-1)
 
 
@@ -150,7 +125,8 @@ def main():
         "Escolha uma imagem de entrada",
         ("Mortal no Lago", "Caveirão", "Senegal", 
          "Guarda-Chuva", "Crianças na Agua", "Bicicleta", 
-         "Banho de Mangueira", "Altinha", "Parede do Chaves", "Salto de Fé", "Fazer upload...")
+         "Banho de Mangueira", "Altinha", "Parede do Chaves", 
+         "Salto de Fé","Mickey 8-bit","Jogo Baixa Qualidade", "Jogo Alta Qualidade", "Fazer upload...")
     )
 
     uploaded_file = None
@@ -197,6 +173,15 @@ def main():
     elif option == "Salto de Fé":
         img_path = "images/AP1VisãoComputacional9_TércioTeixeira.jpg"
         image = Image.open(img_path)
+    elif option == "Mickey 8-bit":
+        img_path = "images/mickey2.jpg"
+        image = Image.open(img_path) 
+    elif option == "Jogo Baixa Qualidade":
+        img_path = "images/celeste2.jpg"
+        image = Image.open(img_path)      
+    elif option == "Jogo Alta Qualidade":
+        img_path = "images/celeste3.jpg"
+        image = Image.open(img_path)         
     else:
         if uploaded_file is not None:
             image = Image.open(uploaded_file)
