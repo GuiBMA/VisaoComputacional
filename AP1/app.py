@@ -276,7 +276,13 @@ def main():
     
     # Aplica Gaussian
     gaussed_img = gaussian_blur(opencv_image, kernel_size, sigma_value)
-    st.image(cv2.cvtColor(gaussed_img, cv2.COLOR_BGR2RGB), caption="Imagem suavizada com Kernel Gaussiano", use_container_width=True)
+    
+    # Cria duas colunas para mostrar as imagens lado a lado
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(cv2.cvtColor(opencv_image, cv2.COLOR_BGR2RGB), caption="Imagem Original", use_container_width=True)
+    with col2:
+        st.image(cv2.cvtColor(gaussed_img, cv2.COLOR_BGR2RGB), caption="Imagem suavizada com Kernel Gaussiano", use_container_width=True)
 
 
 if __name__ == "__main__":
