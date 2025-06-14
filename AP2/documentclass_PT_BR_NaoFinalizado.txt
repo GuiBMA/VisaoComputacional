@@ -1,0 +1,161 @@
+\documentclass[english]{sbrt}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{amsmath}
+\usepackage{url}
+
+\begin{document}
+
+\title{Avalia\c{c}\~ao Automatizada de Cartas TCG via Vis\~ao Computacional: Detec\c{c}\~ao de Danos e Centraliza\c{c}\~ao}
+
+\author{Pedro Lustosa, Guilherme Barros, Andr\'e Silveira, Gustavo Raia, Ivo Lavacek%
+\thanks{Os autores s\~ao alunos do IBMEC, Rio de Janeiro, RJ, Brasil. Este projeto foi desenvolvido como parte da disciplina de Vis\~ao Computacional no curso de Ci\^encia de Dados e Intelig\^encia Artificial.}%
+}
+
+\maketitle
+
+\markboth{SIMP\'OSIO BRASILEIRO DE TELECOMUNICA\c{C}\~OES E PROCESSAMENTO DE SINAIS - SBrT 2025, 04--07 DE SETEMBRO DE 2025, LOCAL}{}
+
+\begin{abstract}
+Este artigo apresenta o desenvolvimento de um sistema computacional interativo voltado para a pr\'e-avalia\c{c}\~ao automatizada de cartas de jogos colecion\'aveis (TCG), com foco na mensura\c{c}\~ao objetiva de dois dos principais crit\'erios adotados por servi\c{c}os de grading profissionais como a PSA (Professional Sports Authenticator): centraliza\c{c}\~ao da imagem e integridade f\'isica da superf\'icie. A proposta surge como resposta \`a necessidade de reduzir a subjetividade presente em processos tradicionais de avalia\c{c}\~ao, oferecendo uma abordagem baseada em evid\^encia computacional e com alta reprodutibilidade.
+
+Para isso, foram integradas t\'ecnicas consolidadas de vis\~ao computacional, incluindo detec\c{c}\~ao de bordas com o filtro de Canny, remo\c{c}\~ao de ru\'idos do tipo "salt and pepper" com filtros de mediana, opera\c{c}\~oes morfol\'ogicas para consolida\c{c}\~ao de regi\~oes danificadas e m\'etodos de template matching com correla\c{c}\~ao cruzada para avalia\c{c}\~ao do desalinhamento. O sistema gera, como sa\'ida, uma estimativa quantitativa para os dois crit\'erios, simulando a nota atribu\'ida com base em faixas emp\'iricas derivadas dos padr\~oes PSA.
+
+Toda a solu\c{c}\~ao foi desenvolvida em Python, com apoio da biblioteca OpenCV, sendo executada no ambiente Google Colab, o que garante portabilidade, acessibilidade e interatividade ao usu\'ario. O artigo descreve os fundamentos t\'ecnicos do projeto, a arquitetura modular implementada, os resultados obtidos em testes controlados e as limita\c{c}\~oes observadas em aplica\c{c}\~oes com imagens reais.
+\end{abstract}
+
+\begin{keywords}
+Vis\~ao computacional, TCG, detec\c{c}\~ao de bordas, morfologia, centraliza\c{c}\~ao, PSA, grading automatizado
+\end{keywords}
+
+\section{Introdu\c{c}\~ao}
+O mercado de cartas colecion\'aveis, conhecido como TCG (Trading Card Game), tem se expandido exponencialmente nos \'ultimos anos, impulsionado por fatores culturais, nostalgia e a crescente valoriza\c{c}\~ao desses itens como ativos de investimento. Nesse contexto, a precis\~ao na avalia\c{c}\~ao da condi\c{c}\~ao f\'isica das cartas tornou-se elemento essencial para determina\c{c}\~ao de seu valor de mercado. Empresas especializadas como a PSA (Professional Sports Authenticator) exercem papel central nesse ecossistema, atribuindo notas baseadas em aspectos como centramento da imagem, integridade da superf\'icie, qualidade da impress\~ao e apelo est\'etico geral.
+
+Entretanto, o processo tradicional de grading apresenta limita\c{c}\~oes significativas. Al\'em dos altos custos de envio, manuseio e espera, h\'a um componente de subjetividade que impacta diretamente a consist\^encia das avalia\c{c}\~oes. Crit\'erios como "eye appeal" e percep\c{c}\~ao visual de danos podem variar entre avaliadores, resultando em notas inconsistentes e dificultando a previsibilidade de valor por parte dos colecionadores.
+
+Neste cen\'ario, surge a proposta de um sistema automatizado de pr\'e-avalia\c{c}\~ao, capaz de oferecer uma estimativa objetiva, transparente e reprodut\'ivel da condi\c{c}\~ao das cartas a partir de imagens digitais. A solu\c{c}\~ao aqui apresentada foca em dois dos crit\'erios mais sens\'iveis \`a variabilidade humana: a centraliza\c{c}\~ao da imagem e os danos superficiais \`a carta. Ambos s\~ao quantific\'aveis por meio de t\'ecnicas de vis\~ao computacional, permitindo automatizar parte do processo de grading com base em evid\^encias matem\'aticas.
+
+A metodologia emprega uma sequ\^encia robusta de etapas: aplica\c{c}\~ao de filtros de Canny para realce de bordas, remo\c{c}\~ao de ru\'ido impulsivo via filtro de mediana, processamento morfol\'ogico para consolida\c{c}\~ao de danos, e t\'ecnicas de correla\c{c}\~ao cruzada para estimativa de desalinhamento. A implementa\c{c}\~ao foi realizada em Python, com suporte das bibliotecas OpenCV e execu\c{c}\~ao no ambiente Google Colab, oferecendo acessibilidade, reprodutibilidade e experi\^encia interativa ao usu\'ario.
+
+Este artigo apresenta os fundamentos t\'ecnicos, as escolhas metodol\'ogicas e os resultados obtidos a partir do desenvolvimento desse sistema, demonstrando o potencial da vis\~ao computacional como ferramenta de suporte \`a avalia\c{c}\~ao profissional de cartas TCG.
+
+\section{Metodologia}
+A estrutura da solu\c{c}\~ao foi segmentada em dois m\'odulos funcionais bem definidos, cada um responsável por uma dimens\~ao cr\'itica da avalia\c{c}\~ao automatizada de cartas TCG: (i) detec\c{c}\~ao de danos \`a superf\'icie da carta e (ii) c\'alculo de desalinhamento da centraliza\c{c}\~ao. Essa separa\c{c}\~ao modular foi concebida com o objetivo de tornar o sistema mais organizado, flex\'ivel e escal\'avel, permitindo que futuras melhorias possam ser implementadas de forma independente em cada componente.
+
+O primeiro m\'odulo, voltado \`a detec\c{c}\~ao de danos, foca em identificar imperfei\c{c}\~oes visuais que possam comprometer a integridade da carta. Ele utiliza uma combina\c{c}\~ao de t\'ecnicas de realce de bordas, filtragem morfol\'ogica e redu\c{c}\~ao de ru\'ido para isolar regi\~oes com ind\'icios de desgaste, como riscos ou dobras. Essa an\'alise fornece uma medida objetiva da superf\'icie, essencial para estimar a nota atribu\'ivel ao aspecto f\'isico do objeto.
+
+O segundo m\'odulo trata da centraliza\c{c}\~ao da imagem impressa, um crit\'erio importante nas escalas de grading profissionais. Por meio de template matching e c\'alculo da dist\^ancia euclidiana entre centros ideais e detectados, estima-se o grau de desalinhamento da carta em rela\c{c}\~ao \`a sua moldura. Essa an\'alise permite atribuir uma nota objetiva ao crit\'erio de centramento, frequentemente afetado por erros de impress\~ao ou recorte.
+
+Ambos os m\'odulos operam a partir de imagens fornecidas pelo usu\'ario, o que confere \`a ferramenta grande acessibilidade. Bastando o envio de uma imagem digital da carta, o sistema consegue realizar toda a avalia\c{c}\~ao de forma aut\^onoma, simulando o julgamento de aspectos que, tradicionalmente, dependem de inspe\c{c}\~ao visual especializada.
+
+\subsection{Detec\c{c}\~ao de Danos F\'isicos}
+O processo de detec\c{c}\~ao de danos \`a superf\'icie da carta tem como objetivo identificar, de forma automatizada, pequenas imperfei\c{c}\~oes visuais que possam comprometer sua nota em uma avalia\c{c}\~ao profissional. Essa an\'alise parte da premissa de que danos materiais se manifestam como contornos n\~ao esperados na superf\'icie, muitas vezes resultantes de riscos, dobras ou desgastes ao longo do uso ou armazenamento.
+
+A primeira etapa do processamento consiste na aplica\c{c}\~ao do filtro de Canny \`a imagem original da carta. Esse algoritmo cl\'assico de detec\c{c}\~ao de bordas atua identificando transi\c{c}\~oes abruptas de intensidade entre pixels vizinhos, as quais correspondem, em condi\c{c}\~oes ideais, aos limites estruturais dos objetos na imagem. No contexto deste projeto, o filtro de Canny permite extrair uma representa\c{c}\~ao bin\'aria dos contornos presentes na carta, destacando regi\~oes que indicam poss\'iveis irregularidades.
+
+Para isolar essas irregularidades, realizamos a subtra\c{c}\~ao da imagem com bordas em rela\c{c}\~ao \`a imagem original. Essa opera\c{c}\~ao pixel a pixel visa evidenciar apenas os contornos "extras" — ou seja, bordas que n\~ao estariam presentes em uma carta intacta e bem conservada. O resultado dessa subtra\c{c}\~ao \'e uma imagem diferencial que enfatiza regi\~oes alteradas, criando uma base preliminar para detec\c{c}\~ao de danos.
+
+Entretanto, essa imagem diferencial pode conter ru\'idos de baixa relev\^ancia, como bordas internas de elementos gr\'aficos ou artefatos residuais. Para refinar a detec\c{c}\~ao, aplicamos um conjunto de opera\c{c}\~oes morfol\'ogicas que atuam na representa\c{c}\~ao espacial dos pixels ativados. A dilata\c{c}\~ao, primeira etapa do processo, expande os contornos detectados, conectando fragmentos de bordas e suavizando falhas discont\'inuas. Na sequ\^encia, utilizamos o fechamento morfol\'ogico (via `morphologyEx`) — uma composi\c{c}\~ao de dilata\c{c}\~ao seguida de eros\~ao — para eliminar pequenos buracos internos e consolidar regi\~oes danificadas de forma coesa.
+
+Esse pipeline morfol\'ogico permite filtrar informa\c{c}\~oes esp\'urias e focar a an\'alise apenas nas imperfei\c{c}\~oes reais da carta, resultando em uma segmenta\c{c}\~ao mais precisa e interpret\'avel. O conjunto dessas etapas, integrado \`a estrutura do sistema, garante maior assertividade na avalia\c{c}\~ao de danos mesmo em condi\c{c}\~oes de imagem desfavor\'aveis.
+
+\subsubsection{Ru\'ido do tipo Salt and Pepper}
+Em ambientes n\~ao controlados, especialmente ao utilizar fotografias capturadas com dispositivos m\'oveis ou sob ilumina\c{c}\~ao vari\'avel, \'e comum a presen\c{c}a de ru\'idos do tipo impulsivo, popularmente conhecidos como "salt and pepper". Esse tipo de ru\'ido se manifesta por meio de pixels isolados que assumem valores extremos — 0 (preto absoluto) ou 255 (branco absoluto) — dispersos aleatoriamente na imagem. Esses artefatos comprometem a consist\^encia dos dados visuais e podem ser erroneamente interpretados como contornos ou imperfei\c{c}\~oes reais, interferindo diretamente na detec\c{c}\~ao precisa de danos superficiais.
+
+Para mitigar esses efeitos, empregamos filtros de mediana, uma t\'ecnica n\~ao linear que atua substituindo o valor de cada pixel pela mediana dos valores em sua vizinhan\c{c}a, geralmente definida por uma janela de tamanho impar (como $3\times3$ ou $5\times5$). Diferentemente de filtros lineares, como o m\'edia ou gaussiano, o filtro de mediana possui a vantagem de preservar bordas ao mesmo tempo em que elimina picos pontuais de ru\'ido, tornando-o especialmente adequado para aplica\c{c}\~oes onde a precis\~ao de contornos \'e cr\'itica.
+
+No contexto deste projeto, a aplica\c{c}\~ao do filtro de mediana antes das etapas de detec\c{c}\~ao de bordas e opera\c{c}\~oes morfol\'ogicas mostrou-se essencial para evitar falsos positivos — regi\~oes erroneamente identificadas como danos — e garantir uma representa\c{c}\~ao mais fiel das imperfei\c{c}\~oes reais da carta. Al\'em disso, contribuiu para a estabilidade das etapas subsequentes, como a subtra\c{c}\~ao entre imagens e o fechamento morfol\'ogico, consolidando um pipeline de processamento mais robusto e confi\'avel mesmo diante de condi\c{c}\~oes visuais adversas.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.85\linewidth]{salt_pepper_comparison.png}
+    \caption{Comparativo entre imagem com ru\'ido do tipo salt and pepper (esq.) e ap\'os filtro de mediana (dir.)}
+    \label{fig:saltpepper}
+\end{figure}
+
+\subsection{C\'alculo de Centraliza\c{c}\~ao}
+Para estimar a centraliza\c{c}\~ao da carta, utilizamos t\'ecnicas de template matching com correla\c{c}\~ao cruzada normalizada. A imagem modificada (carta testada) \'e alinhada sobre a imagem original, buscando a regi\~ao de m\'axima similaridade. A partir disso, computa-se o vetor de deslocamento $(dx, dy)$ entre os centros.
+
+A escolha por esse m\'etodo se deu por sua simplicidade, efici\^encia computacional e compatibilidade com o escopo do projeto, que visa oferecer uma ferramenta acess\'ivel para pr\'e-avalia\c{c}\~ao automatizada. Optamos pela vers\~ao normalizada da correla\c{c}\~ao cruzada por ser mais robusta a varia\c{c}\~oes de intensidade e ilumina\c{c}\~ao, o que aumenta a confiabilidade da detec\c{c}\~ao mesmo sob condi\c{c}\~oes n\~ao ideais de captura. O template matching, nesse contexto, permite localizar, dentro da imagem original, a regi\~ao que mais se assemelha \`a carta analisada, viabilizando a mensura\c{c}\~ao precisa do desalinhamento.
+
+Esperava-se, com essa abordagem, obter uma estimativa objetiva do desalinhamento da carta, convert\'ivel em uma nota padronizada. A hip\'otese subjacente era que quanto maior a dist\^ancia euclidiana entre o centro ideal e o centro detectado, menor seria a nota atribu\'ida, conforme as diretrizes do PSA. Assim, o sistema permitiria ao usu\'ario uma an\'alise quantitativa do centramento de suas cartas antes de submet\^e-las \`a avalia\c{c}\~ao profissional.
+
+A dist\^ancia euclidiana entre o centro ideal e o estimado \'e utilizada como proxy para a centraliza\c{c}\~ao, sendo convertida em nota conforme a tabela emp\'irica baseada nos crit\'erios da PSA. Esta abordagem traduz uma m\'etrica geom\'etrica mensur\'avel em um escore interpret\'avel, compat\'ivel com a escala adotada pela avalia\c{c}\~ao profissional. A dist\^ancia \'e calculada pela f\'ormula:
+
+\begin{equation}
+\text{dist} = \sqrt{(dx)^2 + (dy)^2}
+\end{equation}
+
+Essa medida resume o grau de deslocamento da carta em rela\c{c}\~ao \`a posi\c{c}\~ao central considerada ideal. Com base nessa dist\^ancia, definimos faixas de nota que simulam a classifica\c{c}\~ao do PSA para o crit\'erio de centramento. Por exemplo, deslocamentos at\'e 2 pixels recebem nota 10, entre 3 e 5 pixels nota 8, e assim sucessivamente at\'e notas mais baixas. Essas faixas foram ajustadas empiricamente com base em observa\c{c}\~oes de grading oficiais e em simula\c{c}\~oes conduzidas durante o projeto.
+
+A utiliza\c{c}\~ao dessa proxy num\'erica possibilita padronizar a avalia\c{c}\~ao da centraliza\c{c}\~ao e reduzir a variabilidade introduzida pela inspe\c{c}\~ao visual humana. Al\'em disso, oferece um ponto de partida objetivo para compara\c{c}\~oes entre cartas e futuras integra\c{c}\~oes com modelos de classifica\c{c}\~ao automatizada. Ao priorizar uma m\'etrica escalar e reproduz\'ivel, fortalecemos o rigor metodol\'ogico e facilitamos a valida\c{c}\~ao cruzada com padr\~oes de mercado.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.85\linewidth]{centralizacao_resultado.png}
+    \caption{Resultado do c\'alculo de centraliza\c{c}\~ao com vetor de deslocamento sobreposto.}
+    \label{fig:centralizacao}
+\end{figure}
+
+\section{Resultados e An\'alise}
+Para validar a efic\'acia do sistema proposto, foram realizados testes com tr\^es imagens de cartas simuladas. Essas imagens foram geradas a partir de uma carta-base original e, posteriormente, modificadas com o objetivo de simular dois cen\'arios distintos de degrada\c{c}\~ao: um com leve deslocamento e outro com danos f\'isicos severos e desalinhamento acentuado. Essa abordagem permitiu isolar os efeitos dos diferentes tipos de imperfei\c{c}\~oes sobre as m\'etricas extra\'idas pelo sistema, garantindo controle experimental sobre os par\^ametros de avalia\c{c}\~ao.
+
+Cada imagem foi submetida ao pipeline completo de processamento, englobando remo\c{c}\~ao de ru\'ido impulsivo, detec\c{c}\~ao de bordas com Canny, aplica\c{c}\~ao de opera\c{c}\~oes morfol\'ogicas e estimativa de deslocamento via correla\c{c}\~ao cruzada. Em seguida, as dist\^ancias euclidianas entre centros ideais e detectados foram convertidas em notas segundo a escala emp\'irica definida com base nos crit\'erios da PSA. Paralelamente, a imagem diferencial obtida pela subtra\c{c}\~ao de bordas foi analisada para estimativa da superf\'icie comprometida.
+
+Os resultados quantitativos s\~ao sumarizados a seguir:
+
+\begin{itemize}
+    \item \textbf{Carta 1 (controle):} Deslocamento $(0,0)$, dist\^ancia = 0 px. Nota PSA (centraliza\c{c}\~ao) = 10; Nota de superf\'icie = 8; Nota final simulada = 9.
+    \item \textbf{Carta 2 (deslocamento leve):} Deslocamento $(6,0)$, dist\^ancia = 6 px. Nota PSA (centraliza\c{c}\~ao) = 6; Nota de superf\'icie = 8; Nota final simulada = 7.
+    \item \textbf{Carta 3 (dano severo e desalinhamento):} Deslocamento $(-11,-4)$, dist\^ancia = 11.7 px. Nota PSA (centraliza\c{c}\~ao) = 1; Nota de superf\'icie = 3; Nota final simulada = 2.
+\end{itemize}
+
+Observa-se que o sistema foi sens\'ivel \`a varia\c{c}\~ao tanto em termos de centraliza\c{c}\~ao quanto de integridade superficial, apresentando respostas coerentes com o padr\~ao esperado. No caso da Carta 1, que representava o estado ideal, o sistema atribuiu nota m\'axima de centramento e apenas pequenas penaliza\c{c}\~oes na superf\'icie devido \`a compress\~ao de imagem. A Carta 2, com deslocamento leve mas superf\'icie preservada, teve nota intermedi\'aria, evidenciando a capacidade do modelo em distinguir aspectos independentes. Por fim, a Carta 3, propositalmente degradada, obteve notas m\'inimas em ambos os crit\'erios, demonstrando que o pipeline consegue captar tanto desalinhamentos estruturais quanto danos f\'isicos relevantes.
+
+Os resultados confirmam que a abordagem proposta possui robustez para avalia\c{c}\~oes preliminares em condi\c{c}\~oes controladas, abrindo margem para aplica\c{c}\~oes futuras em cen\'arios com imagens reais e maior variabilidade visual.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{danos_detectados.png}
+    \caption{Detec\c{c}\~ao de danos ap\'os processamento morfol\'ogico.}
+    \label{fig:danos}
+\end{figure}
+
+\section{Discuss\~ao}
+Os resultados obtidos nas simula\c{c}\~oes demonstram que o sistema desenvolvido apresenta desempenho satisfat\'orio e consistente em condi\c{c}\~oes controladas, validando a proposta metodol\'ogica tanto para a detec\c{c}\~ao de danos quanto para a estima\c{c}\~ao de desalinhamento. A aplica\c{c}\~ao combinada de detec\c{c}\~ao de bordas, remo\c{c}\~ao de ru\'idos e opera\c{c}\~oes morfol\'ogicas mostrou-se eficaz em capturar tra\c{c}os que indicam riscos e imperfei\c{c}\~oes reais, enquanto a an\'alise de centraliza\c{c}\~ao via correla\c{c}\~ao cruzada resultou em m\'etricas est\'aveis e bem calibradas.
+
+Contudo, quando o mesmo pipeline foi aplicado a fotografias reais de cartas, capturadas em ambientes dom\'esticos e com dispositivos variados, observou-se uma degrada\c{c}\~ao significativa no desempenho. Essa perda de precis\~ao est\'a associada a fatores intr\'insecos \`a captura de imagem n\~ao padronizada, os quais comprometem a consist\^encia dos dados e reduzem a confiabilidade das detec\c{c}\~oes.
+
+As principais limita\c{c}\~oes identificadas foram:
+\begin{itemize}
+    \item \textbf{Ilumina\c{c}\~ao irregular e reflexos especulares:} interferem nos gradientes de intensidade e geram contornos artificiais.
+    \item \textbf{Perspectiva com angula\c{c}\~ao e efeito paralaxe:} causam distor\c{c}\~oes geom\'etricas que comprometem a detec\c{c}\~ao precisa do centramento.
+    \item \textbf{Baixa resolu\c{c}\~ao ou foco impreciso:} dificulta a segmenta\c{c}\~ao precisa das bordas reais, afetando tanto a detec\c{c}\~ao de danos quanto a correla\c{c}\~ao cruzada.
+\end{itemize}
+
+Para mitigar esses problemas e tornar o sistema mais robusto em aplica\c{c}\~oes reais, prop\~oe-se a incorpora\c{c}\~ao de t\'ecnicas adicionais de pr\'e-processamento. Entre elas, destaca-se a corre\c{c}\~ao de perspectiva atrav\'es de transformadas homogr\'aficas, que pode alinhar a imagem da carta a uma proje\c{c}\~ao ortogonal, eliminando efeitos de inclina\c{c}\~ao. Ademais, a normaliza\c{c}\~ao de histograma surge como uma ferramenta eficaz para reduzir a variabilidade de ilumina\c{c}\~ao, homogenizando os contrastes e favorecendo a detec\c{c}\~ao de bordas reais.
+
+Al\'em das melhorias no pipeline cl\'assico, vislumbra-se a possibilidade de integrar modelos baseados em aprendizado profundo. Redes convolucionais podem ser treinadas para detectar danos com maior toler\^ancia \`a varia\c{c}\~ao visual, enquanto classificadores supervisionados podem ser utilizados para reconhecer cartas espec\'ificas, cruzando essas informa\c{c}\~oes com bancos de dados de raridade, pre\c{c}os e edi\c{c}\~oes. Essa integra\c{c}\~ao multimodal ampliaria o escopo funcional do sistema, transformando-o em uma plataforma completa de suporte \`a avalia\c{c}\~ao e negocia\c{c}\~ao de cartas TCG.
+
+Em s\'intese, embora o sistema tenha demonstrado elevada efetividade em ambientes controlados, sua aplica\c{c}\~ao em contextos reais ainda requer adapta\c{c}\~oes metodol\'ogicas. Os resultados at\'e aqui obtidos, contudo, fornecem uma base s\'olida para o desenvolvimento incremental de uma ferramenta confi\'avel, interpret\'avel e potencialmente integrada \`a cadeia de valor do mercado colecion\'avel.
+
+\section{Conclus\~ao}
+O desenvolvimento desta aplica\c{c}\~ao de pr\'e-avalia\c{c}\~ao automatizada para cartas TCG evidencia o potencial da vis\~ao computacional como ferramenta de apoio \`a classifica\c{c}\~ao de itens colecion\'aveis. A segmenta\c{c}\~ao funcional da solu\c{c}\~ao em m\'odulos de detec\c{c}\~ao de danos e estima\c{c}\~ao de centraliza\c{c}\~ao mostrou-se acertada, permitindo an\'alises precisas, interpret\'aveis e potencialmente escal\'aveis. Cada componente do sistema foi concebido com base em fundamentos s\'olidos: uso do filtro de Canny para realce de contornos, aplica\c{c}\~ao de morfologia matem\'atica para refinamento estrutural, uso do filtro de mediana para remo\c{c}\~ao de ru\'idos impulsivos e template matching com correla\c{c}\~ao cruzada para an\'alise geom\'etrica.
+
+A integra\c{c}\~ao desses recursos resultou em um pipeline capaz de atribuir notas simuladas condizentes com os crit\'erios da PSA em imagens sint\'eticas e ambientes controlados, consolidando uma prova de conceito robusta. A interpreta\c{c}\~ao num\'erica dos resultados, associada \`a visualiza\c{c}\~ao interativa via Google Colab, oferece uma experi\^encia acess\'ivel para usu\'arios que desejam avaliar previamente o estado de suas cartas sem depender exclusivamente da inspe\c{c}\~ao visual ou de servi\c{c}os profissionais.
+
+Apesar das limita\c{c}\~oes observadas na aplica\c{c}\~ao com imagens reais — relacionadas \`a ilumina\c{c}\~ao, perspectiva e resolu\c{c}\~ao —, os resultados obtidos fornecem uma base concreta para extens\~oes futuras. Entre as propostas de evolu\c{c}\~ao, destacam-se a incorpora\c{c}\~ao de pr\'e-processamentos avan\c{c}ados, como normaliza\c{c}\~ao de histograma e corre\c{c}\~ao de perspectiva, bem como a ado\c{c}\~ao de modelos baseados em aprendizado profundo para reconhecimento de cartas e detec\c{c}\~ao de danos com maior generaliza\c{c}\~ao.
+
+Em suma, este projeto representa um passo significativo rumo \`a automatiza\c{c}\~ao parcial do grading de cartas TCG, oferecendo uma alternativa objetiva, replic\'avel e de baixo custo. Ao reunir fundamentos cl\'assicos de vis\~ao computacional com um fluxo modular e interpret\'avel, o sistema criado n\~ao apenas atende \`as necessidades imediatas de pr\'e-avalia\c{c}\~ao, mas tamb\'em se posiciona como base estruturada para solu\c{c}\~oes futuras mais sofisticadas e integradas \`a cadeia digital do colecionismo.
+
+\begin{thebibliography}{00}
+\bibitem{psa_standards} PSA - Grading Standards. [Online]. Available: \url{https://www.psacard.com/gradingstandards}
+
+\bibitem{opencv} OpenCV Library. [Online]. Available: \url{https://opencv.org/}
+
+\bibitem{psa_pdf} Roneberg Cairns. PSA Grading Guide. [Online]. Available: \url{https://www.ronebergcairns.com/2011onwards/general2011_3111.pdf}
+\end{thebibliography}
+
+\end{document}
